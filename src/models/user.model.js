@@ -1,101 +1,83 @@
+const mongoose = require('mongoose');
 const validator = require('validator');
 const { roles } = require('../config/roles');
-const Sequelize = require('sequelize');
 
-module.exports = (sequelize, dataType) => {
-  const user = sequelize.define('user', {
-    id: {
-      type: Sequelize.UUID,
-      allowNull: false,
-      primaryKey: true,
-      defaultValue: Sequelize.UUIDV4,
+const userSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 3,
+    maxlength: 60,
+  },
+
+  username: {
+    type: String,
+    required: true,
+    trim: true,
+    lowercase: true,
+    unique: true,
+  },
+
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true,
+    validate: {
+      validator: (value) => validator.isEmail(value),
+      message: 'Invalid email',
     },
+  },
 
-    fullName: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      validate: {
-        len: [3, 50],
-      },
+  phoneNumber: {
+    type: String,
+    validate: {
+      validator: (value) => !value || /^(\+\d{1,3})?\d{10}$/.test(value),
+      message: 'Invalid phone number format',
     },
+  },
 
-    username: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      lowercase: true,
-      unique: true,
+  password: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 8,
+    validate: {
+      validator: (value) =>
+        /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/.test(
+          value
+        ),
+      message: 'Password must contain at least one letter and one number',
     },
+  },
 
-    email: {
-      type: dataType.STRING,
-      allowNull: false,
-      unique: true,
-      trim: true,
-      lowercase: true,
-      validate(value) {
-        if (!validator.isEmail(value)) {
-          throw new Error('Invalid email');
-        }
-      },
+  profilePicture: {
+    type: String,
+    validate: {
+      validator: (value) => !value || validator.isURL(value),
+      message: 'Invalid URL',
     },
+  },
 
-    phoneNumber: {
-      type: dataType.STRING,
-      allowNull: true,
-      validate: {
-        isPhoneNumber: function (value) {
-          if (!value) return;
-          if (!/^(\+\d{1,3})?\d{10}$/.test(value)) {
-            throw new Error('Invalid phone number format');
-          }
-        },
-      },
-    },
+  role: {
+    type: String,
+    enum: roles,
+    default: 'listener',
+  },
 
-    password: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      minlength: 8,
-      validate(value) {
-        if (
-          !value.match(
-            /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/
-          )
-        ) {
-          throw new Error(
-            'Password must contain at least one letter and one number'
-          );
-        }
-      },
-    },
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
 
-    profilePicture: {
-      type: dataType.STRING,
-      allowNull: true,
-      validate: {
-        isURL: true,
-      },
-    },
+  dateJoined: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-    role: {
-      type: dataType.ENUM(...roles),
-      defaultValue: 'listener',
-    },
+const User = mongoose.model('User', userSchema);
 
-    isEmailVerified: {
-      type: dataType.BOOLEAN,
-      defaultValue: false,
-    },
-
-    dateJoined: {
-      type: dataType.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.NOW,
-    },
-  });
-
-  return user;
-};
+module.exports = User;

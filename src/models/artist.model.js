@@ -1,63 +1,57 @@
-const Sequelize = require('sequelize');
+const mongoose = require('mongoose');
 
-module.exports = (sequelize, dataType) => {
-  const artist = sequelize.define('artist', {
-    id: {
-      type: Sequelize.UUID,
-      allowNull: false,
-      primaryKey: true,
-      defaultValue: Sequelize.UUIDV4,
-    },
+const artistSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 3,
+    maxlength: 50,
+  },
 
-    fullName: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      validate: {
-        len: [3, 50],
+  artistName: {
+    type: String,
+    required: true,
+    trim: true,
+    lowercase: true,
+    unique: true,
+  },
+
+  bio: {
+    type: String,
+    required: false,
+  },
+
+  profilePicture: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function (v) {
+        return /^https?:\/\/.*\.(jpg|jpeg|png|gif|bmp|webp)$/.test(v);
       },
+      message: (props) => `${props.value} is not a valid URL!`,
     },
+  },
 
-    artistName: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      lowercase: true,
-      unique: true,
-    },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 50,
+  },
 
-    bio: {
-      type: dataType.TEXT,
-      allowNull: true,
-    },
+  albums: {
+    type: [String],
+    required: true,
+  },
 
-    profilePicture: {
-      type: dataType.STRING,
-      allowNull: false,
-      validate: {
-        isURL: true,
-      },
-    },
+  songs: {
+    type: [String],
+    required: true,
+  },
+});
 
-    title: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      validate: {
-        len: [2, 50],
-      },
-    },
+const Artist = mongoose.model('Artist', artistSchema);
 
-    albums: {
-      type: dataType.ARRAY(dataType.STRING),
-      allowNull: false,
-    },
-
-    songs: {
-      type: dataType.ARRAY(dataType.STRING),
-      allowNull: false,
-    },
-  });
-
-  return artist;
-};
+module.exports = Artist;

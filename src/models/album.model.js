@@ -1,52 +1,47 @@
-const Sequelize = require('sequelize');
+const mongoose = require('mongoose');
 
-module.exports = (sequelize, dataType) => {
-  const album = sequelize.define('album', {
-    id: {
-      type: Sequelize.UUID,
-      allowNull: false,
-      primaryKey: true,
-      defaultValue: Sequelize.UUIDV4,
-    },
+const albumSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 50,
+  },
 
-    title: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      validate: {
-        len: [2, 50],
+  genre: {
+    type: String,
+    required: false,
+  },
+
+  description: {
+    type: String,
+    required: false,
+  },
+
+  artworkCoverUri: {
+    type: String,
+    required: false,
+    validate: {
+      validator: function (v) {
+        return /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(v);
       },
+      message: (props) => `${props.value} is not a valid URL!`,
     },
+  },
 
-    genre: {
-      type: dataType.STRING,
-      allowNull: true,
-    },
+  songs: {
+    type: [String],
+    required: false,
+  },
 
-    description: {
-      type: dataType.TEXT,
-      allowNull: true,
-    },
+  releaseDate: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+});
 
-    artworkCoverUri: {
-      type: dataType.STRING,
-      allowNull: true,
-      validate: {
-        isURL: true,
-      },
-    },
+const Album = mongoose.model('Album', albumSchema);
 
-    songs: {
-      type: dataType.ARRAY(dataType.STRING),
-      allowNull: true,
-    },
-
-    releaseDate: {
-      type: dataType.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.NOW,
-    },
-  });
-
-  return album;
-};
+module.exports = Album;

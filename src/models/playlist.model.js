@@ -1,41 +1,36 @@
-const Sequelize = require('sequelize');
+const mongoose = require('mongoose');
 
-module.exports = (sequelize, dataType) => {
-  const playlist = sequelize.define('playlist', {
-    id: {
-      type: Sequelize.UUID,
-      allowNull: false,
-      primaryKey: true,
-      defaultValue: Sequelize.UUIDV4,
-    },
+const playlistSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 50,
+  },
 
-    title: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      validate: {
-        len: [2, 50],
+  description: {
+    type: String,
+    required: false,
+  },
+
+  songs: {
+    type: [String],
+    required: true,
+  },
+
+  playlistCoverUri: {
+    type: String,
+    required: false,
+    validate: {
+      validator: function (v) {
+        return /^https?:\/\/.*\.(?:png|jpg|jpeg|gif|svg)$/.test(v); // regex to check URL format
       },
+      message: (props) => `${props.value} is not a valid URL!`,
     },
+  },
+});
 
-    description: {
-      type: dataType.TEXT,
-      allowNull: true,
-    },
+const Playlist = mongoose.model('Playlist', playlistSchema);
 
-    songs: {
-      type: dataType.ARRAY(dataType.STRING),
-      allowNull: false,
-    },
-
-    playlistCoverUri: {
-      type: dataType.STRING,
-      allowNull: true,
-      validate: {
-        isURL: true,
-      },
-    },
-  });
-
-  return playlist;
-};
+module.exports = Playlist;

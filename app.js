@@ -9,16 +9,11 @@ const httpStatus = require('http-status');
 const config = require('./src/config/config');
 const morgan = require('./src/config/morgan');
 const { jwtStrategy } = require('./src/config/passport');
-const { authLimiter } = require('./src/middlewares');
-const routes = require('./routes');
-const { errorConverter, errorHandler } = require('./middlewares/error');
-const ApiError = require('./utils/ApiError');
-const { db } = require('./models');
-const multer = require('./utils/multer');
+const routes = require('./src/routes');
+const { errorConverter, errorHandler } = require('./src/middlewares/error');
+const ApiError = require('./src/utils/ApiError');
 
 const app = express();
-
-app.use(multer.single('file'));
 
 if (config.env !== 'test') {
   app.use(morgan.successHandler);
@@ -49,10 +44,11 @@ app.options('*', cors());
 app.use(passport.initialize());
 passport.use('jwt', jwtStrategy);
 
-// limit repeated failed requests to auth endpoints
-if (config.env === 'production') {
-  app.use('/auth', authLimiter);
-}
+// Test middleware
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});
 
 //api routes
 app.use(routes);
@@ -67,9 +63,6 @@ app.use(errorConverter);
 
 // handle error
 app.use(errorHandler);
-
-// intit DB
-db.sequelize.sync(/*{ force: true }*/);
 
 // Seeding Admin
 // require('./utils/seed-admin').seedAdmin();

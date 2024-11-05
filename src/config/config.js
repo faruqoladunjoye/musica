@@ -9,6 +9,7 @@ const envVarsSchema = Joi.object()
     NODE_ENV: Joi.string()
       .valid('production', 'development', 'test')
       .required(),
+    DB_URL: Joi.string().required().description('DB url'),
     PORT: Joi.number().default(3000),
     JWT_SECRET: Joi.string().required().description('JWT secret key'),
     JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
@@ -40,12 +41,6 @@ const envVarsSchema = Joi.object()
       'secret api key from cloudinary'
     ),
     CLOUD_NAME: Joi.string().description('cloud name'),
-    DB_HOST: Joi.string(),
-    DB_NAME: Joi.string(),
-    DB_USER: Joi.string(),
-    DB_PASSWORD: Joi.string(),
-    DB_PORT: Joi.string(),
-    DIALECT: Joi.string(),
   })
   .unknown();
 
@@ -60,15 +55,7 @@ if (error) {
 module.exports = {
   env: envVars.NODE_ENV,
   port: envVars.PORT,
-  sequelize: {
-    url: envVars.DB_URL,
-    host: envVars.DB_HOST,
-    database: envVars.DB_NAME,
-    user: envVars.DB_USER,
-    password: envVars.DB_PASSWORD,
-    dialect: envVars.DIALECT,
-    port: envVars.DB_PORT,
-  },
+  url: envVars.DB_URL,
   jwt: {
     secret: envVars.JWT_SECRET,
     accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,

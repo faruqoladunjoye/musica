@@ -1,17 +1,14 @@
-const { db } = require('../models');
 const { userService } = require('../services');
 
 module.exports.seedAdmin = async () => {
   const adminPayload = {
-    fullName: 'TM30 Global',
-    email: 'info@tm30.net',
+    fullName: 'Faruq Bolaji',
     username: 'admin',
-    address: '29A Berkeley Street, Lagos Island, Lagos State',
+    email: 'oladunjoyefaruq@yahoo.com',
+    phoneNumber: '+2348085897793',
     password: 'Available@123??',
-    accountStatus: 'active',
-    isEmailVerified: true,
     role: 'admin',
-    phoneNumber: '+2347033809318',
+    isEmailVerified: true,
   };
   let admin = await userService.getUserByEmail(adminPayload.email);
   console.log(admin);

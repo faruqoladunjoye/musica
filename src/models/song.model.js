@@ -1,55 +1,53 @@
-const Sequelize = require('sequelize');
+const mongoose = require('mongoose');
 
-module.exports = (sequelize, dataType) => {
-  const song = sequelize.define('song', {
-    id: {
-      type: Sequelize.UUID,
-      allowNull: false,
-      primaryKey: true,
-      defaultValue: Sequelize.UUIDV4,
-    },
+const songSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 50,
+  },
 
-    title: {
-      type: dataType.STRING,
-      allowNull: false,
-      trim: true,
-      validate: {
-        len: [2, 50],
+  genre: {
+    type: String,
+    default: null,
+  },
+
+  lyrics: {
+    type: String,
+    default: null,
+  },
+
+  artworkCoverUri: {
+    type: String,
+    default: null,
+    validate: {
+      validator: function (v) {
+        return /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(v);
       },
+      message: (props) => `${props.value} is not a valid URL!`,
     },
+  },
 
-    genre: {
-      type: dataType.STRING,
-      allowNull: true,
-    },
-
-    lyrics: {
-      type: dataType.TEXT,
-      allowNull: true,
-    },
-
-    artworkCoverUri: {
-      type: dataType.STRING,
-      allowNull: true,
-      validate: {
-        isURL: true,
+  audioURI: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function (v) {
+        return /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(v);
       },
+      message: (props) => `${props.value} is not a valid URL!`,
     },
+  },
 
-    audioURI: {
-      type: dataType.STRING,
-      allowNull: false,
-      validate: {
-        isURL: true,
-      },
-    },
+  releaseDate: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+});
 
-    releaseDate: {
-      type: dataType.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.NOW,
-    },
-  });
+const Song = mongoose.model('Song', songSchema);
 
-  return song;
-};
+module.exports = Song;
