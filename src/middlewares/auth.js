@@ -2,7 +2,7 @@ const passport = require('passport');
 const httpStatus = require('http-status');
 const ApiError = require('../utils/ApiError');
 const { roleRights } = require('../config/roles');
-const User = require('./../models/album.model');
+const User = require('./../models/user.model');
 
 const verifyCallback =
   (req, resolve, reject, requiredRights) => async (err, user, info) => {
@@ -13,14 +13,14 @@ const verifyCallback =
     }
 
     req.user = user;
-    const userInfo = await User.findById(user.id);
+    const userInfo = await User.findById(user._id);
 
     if (requiredRights.length) {
       const userRights = roleRights.get(userInfo.role);
       const hasRequiredRights = requiredRights.some((requiredRight) =>
         userRights.includes(requiredRight)
       );
-      if (!hasRequiredRights && req.params.userId !== user.id) {
+      if (!hasRequiredRights && req.params.userId !== user._id.toString()) {
         return reject(new ApiError(httpStatus.FORBIDDEN, 'Forbidden'));
       }
     }

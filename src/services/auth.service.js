@@ -1,47 +1,40 @@
 const httpStatus = require('http-status');
 const tokenService = require('./token.service');
 const userService = require('./user.service');
-const { db } = require('../models');
+const Token = require('./../models/token.model');
 const ApiError = require('../utils/ApiError');
 const { tokenTypes } = require('../config/tokens');
 const bcrypt = require('bcryptjs');
 
 /**
- * Login with username and password
+ * Login with email and password
  * @param {string} email
  * @param {string} password
  * @returns {Promise<User>}
  */
 const loginUserWithEmailAndPassword = async (email, password) => {
   const user = await userService.getUserByEmail(email);
-  if (
-    !user ||
-    !(await userService.isPasswordMatch(password, user.dataValues))
-  ) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password');
+  if (!user || !(await userService.isPasswordMatch(password, user))) {
+    throw new ApiError(403, 'Incorrect email or password');
   }
   return user;
 };
 
+/**
+ * Login with username and password
+ * @param {string} username
+ * @param {string} password
+ * @returns {Promise<User>}
+ */
 const loginWithUsernameAndPassword = async (username, password) => {
   const user = await userService.getUserByUsername(username);
-  if (
-    !user ||
-    !(await userService.isPasswordMatch(password, user.dataValues))
-  ) {
+  if (!user || !(await userService.isPasswordMatch(password, user))) {
     throw new ApiError(
-      httpStatus.UNAUTHORIZED,
+      httpStatus.status.UNAUTHORIZED,
       'Incorrect Login ID or Password'
     );
   }
   return user;
-};
-
-const generateSecret = () => {
-  const secret = speakeasy.generateSecret({
-    name: 'Some days I feeling jovi, some days I feeling gloomy',
-  });
-  return secret.base32;
 };
 
 /**
@@ -50,24 +43,15 @@ const generateSecret = () => {
  * @returns {Promise}
  */
 const logout = async (refreshToken) => {
-  const refreshTokenDoc = await db.tokens.findOne({
-    where: {
-      token: refreshToken,
-      type: tokenTypes.REFRESH,
-      blacklisted: false,
-    },
+  const refreshTokenDoc = await Token.findOne({
+    token: refreshToken,
+    type: tokenTypes.REFRESH,
+    blacklisted: false,
   });
   if (!refreshTokenDoc) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Not found');
+    throw new ApiError(httpStatus.status.NOT_FOUND, 'Not found');
   }
-  // await refreshTokenDoc.remove();
-  await db.tokens.destroy({
-    where: {
-      token: refreshToken,
-      type: tokenTypes.REFRESH,
-      blacklisted: false,
-    },
-  });
+  await refreshTokenDoc.deleteOne();
 };
 
 /**
@@ -85,10 +69,10 @@ const refreshAuth = async (refreshToken) => {
     if (!user) {
       throw new Error();
     }
-    await refreshTokenDoc.remove();
+    await refreshTokenDoc.deleteOne();
     return tokenService.generateAuthTokens(user);
   } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Please Authenticate');
+    throw new ApiError(httpStatus.status.UNAUTHORIZED, 'Please Authenticate');
   }
 };
 
@@ -110,20 +94,31 @@ const resetPassword = async (resetPasswordToken, newPassword) => {
     }
     newPassword = bcrypt.hashSync(newPassword, 8);
     await userService.updateUserById(user.id, { password: newPassword });
-    await db.tokens.destroy({
-      where: { user: user.id, type: tokenTypes.RESET_PASSWORD },
+    await Token.deleteMany({
+      user: user.id,
+      type: tokenTypes.RESET_PASSWORD,
     });
   } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Password Reset Failed 😔😔😔');
+    throw new ApiError(httpStatus.status.UNAUTHORIZED, 'Password Reset Failed');
   }
 };
 
+/**
+ * User password reset by providing old password
+ * @param {ObjectId} userId
+ * @param {string} newPassword
+ * @param {string} oldPassword
+ * @returns {Promise}
+ */
 const userResetPassword = async (userId, newPassword, oldPassword) => {
   const user = await userService.getUserById(userId);
-  if (!user) throw new ApiError(httpStatus.NOT_FOUND, 'User Not Found!');
+  if (!user) throw new ApiError(httpStatus.status.NOT_FOUND, 'User Not Found');
 
-  if (!(await userService.isPasswordMatch(oldPassword, user.dataValues))) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect Old Password');
+  if (!(await userService.isPasswordMatch(oldPassword, user))) {
+    throw new ApiError(
+      httpStatus.status.UNAUTHORIZED,
+      'Incorrect Old Password'
+    );
   }
   newPassword = bcrypt.hashSync(newPassword, 8);
   await userService.updateUserById(user.id, { password: newPassword });
@@ -144,17 +139,20 @@ const verifyEmail = async (verifyEmailToken) => {
     if (!user) {
       throw new Error();
     }
-    await db.tokens.destroy({
-      where: { user: user.id, type: tokenTypes.VERIFY_EMAIL },
+    await Token.deleteMany({
+      user: user.id,
+      type: tokenTypes.VERIFY_EMAIL,
     });
     await userService.updateUserById(user.id, { isEmailVerified: true });
   } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
+    throw new ApiError(
+      httpStatus.status.UNAUTHORIZED,
+      'Email verification failed'
+    );
   }
 };
 
 module.exports = {
-  generateSecret,
   loginUserWithEmailAndPassword,
   logout,
   refreshAuth,

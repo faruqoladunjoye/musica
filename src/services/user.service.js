@@ -1,7 +1,7 @@
 const httpStatus = require('http-status');
 const bcrypt = require('bcryptjs');
 const ApiError = require('../utils/ApiError');
-const { db } = require('../models');
+const User = require('./../models/user.model');
 const logger = require('../config/logger');
 
 /**
@@ -10,7 +10,7 @@ const logger = require('../config/logger');
  * @returns {Promise<boolean>}
  */
 const isEmailTaken = async function (email) {
-  const user = await db.users.findOne({ where: { email } });
+  const user = await User.findOne({ email });
   logger.info(user);
   return !!user;
 };
@@ -37,7 +37,7 @@ const createUser = async (userBody) => {
   }
   // eslint-disable-next-line no-param-reassign
   userBody.password = bcrypt.hashSync(userBody.password, 8);
-  return db.users.create(userBody);
+  return User.create(userBody);
 };
 
 /**
@@ -50,46 +50,22 @@ const createUser = async (userBody) => {
  * @returns {Promise<QueryResult>}
  */
 const queryUsers = async (filter, options) => {
-  const offset = ((+options.page || 1) - 1) * (options.limit || 10);
+  const limit = options.limit || 10;
+  const page = options.page || 1;
+  const skip = (page - 1) * limit;
 
-  let users;
-  if (filter.role) {
-    users = await db.users.findAll({
-      where: { role: filter.role },
-      limit: options.limit,
-      offset: offset,
-      attributes: [
-        'id',
-        'fullName',
-        'username',
-        'email',
-        'phoneNumber',
-        'role',
-      ],
-    });
-  } else {
-    users = await db.users.findAll({
-      limit: options.limit,
-      offset: offset,
-      attributes: [
-        'id',
-        'fullName',
-        'username',
-        'email',
-        'phoneNumber',
-        'role',
-      ],
-    });
-  }
+  const users = await User.find(filter)
+    .select('-password') // Exclude password
+    .limit(limit)
+    .skip(skip);
 
-  const totalCount = users.length;
-
-  const totalPages = Math.ceil(totalCount / +options.limit) || 1;
+  const totalCount = await User.countDocuments(filter);
+  const totalPages = Math.ceil(totalCount / limit);
 
   return {
     users,
-    page: options.page || 1,
-    limit: options.limit || 10,
+    page,
+    limit,
     totalPages,
     totalCount,
   };
@@ -101,9 +77,11 @@ const queryUsers = async (filter, options) => {
  * @returns {Promise<User>}
  */
 const getUserById = async (id) => {
-  return await db.users.findByPk(id, {
-    attributes: { exclude: ['password'] },
-  });
+  const user = await User.findById(id).select('-password');
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  return user;
 };
 
 /**
@@ -112,13 +90,11 @@ const getUserById = async (id) => {
  * @returns {Promise<User>}
  */
 const getUserByEmail = async (email) => {
-  return db.users.findOne({
-    where: { email },
-  });
+  return User.findOne({ email });
 };
 
 const getUserByUsername = async (username) => {
-  return db.users.findOne({ where: { username } });
+  return User.findOne({ username });
 };
 
 /**
@@ -136,11 +112,7 @@ const updateUserById = async (userId, updateBody) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
   Object.assign(user, updateBody);
-  return await db.users.update(user.dataValues, {
-    where: {
-      id: userId,
-    },
-  });
+  return await user.save();
 };
 
 /**
@@ -153,7 +125,7 @@ const deleteUserById = async (userId) => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
-  await db.users.destroy(user);
+  await User.findByIdAndDelete(user);
   return user;
 };
 

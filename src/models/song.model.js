@@ -9,6 +9,11 @@ const songSchema = new mongoose.Schema({
     maxlength: 50,
   },
 
+  artistId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Artist',
+  },
+
   genre: {
     type: String,
     default: null,
@@ -39,6 +44,18 @@ const songSchema = new mongoose.Schema({
       },
       message: (props) => `${props.value} is not a valid URL!`,
     },
+  },
+
+  duration: {
+    type: Number,
+    required: true,
+    min: 1,
+  },
+
+  album: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Album',
+    default: null,
   },
 
   releaseDate: {

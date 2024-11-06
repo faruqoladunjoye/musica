@@ -51,7 +51,7 @@ app.use((req, res, next) => {
 });
 
 //api routes
-app.use(routes);
+app.use('/api', routes);
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
@@ -65,6 +65,6 @@ app.use(errorConverter);
 app.use(errorHandler);
 
 // Seeding Admin
-// require('./utils/seed-admin').seedAdmin();
+// require('./src/utils/seed-admin').seedAdmin();
 
 module.exports = app;

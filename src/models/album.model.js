@@ -9,12 +9,12 @@ const albumSchema = new mongoose.Schema({
     maxlength: 50,
   },
 
-  genre: {
-    type: String,
-    required: false,
+  artistId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Artist',
   },
 
-  description: {
+  genre: {
     type: String,
     required: false,
   },

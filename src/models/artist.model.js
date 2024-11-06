@@ -6,7 +6,7 @@ const artistSchema = new mongoose.Schema({
     required: true,
     trim: true,
     minlength: 3,
-    maxlength: 50,
+    maxlength: 60,
   },
 
   artistName: {
@@ -31,14 +31,6 @@ const artistSchema = new mongoose.Schema({
       },
       message: (props) => `${props.value} is not a valid URL!`,
     },
-  },
-
-  title: {
-    type: String,
-    required: true,
-    trim: true,
-    minlength: 2,
-    maxlength: 50,
   },
 
   albums: {
